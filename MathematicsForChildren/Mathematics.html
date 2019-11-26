@@ -1,0 +1,388 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link href="https://fonts.googleapis.com/css?family=Permanent+Marker&display=swap" rel="stylesheet">
+		<style>
+			
+			html, body {
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			
+			body {
+				background-color: #ffffe6;
+			}
+			
+			img {
+				margin-left: 40px;
+			}
+			
+			h1 {
+				margin-left: 40px;
+				display: inline;
+				color: green;
+			}
+			
+			#answer {
+				font-size: 30px;
+				font-weight: bold;
+				margin: 10px;
+				width: 60px;
+				height: 50px;
+				color: blue;
+			}
+			
+			.hide-smiley {
+				visibility: hidden;
+				height: 0px;
+			}
+			
+			.show-smiley {
+				visibility: visible;
+				height: 300px;
+			}
+			
+			#answer-btn {
+				color: blue;
+				background-color: cyan;
+			}
+			
+			#new-question-btn {
+				color: brown;
+				background-color: #ffc266;
+			}
+			
+			#cheer {
+				font-size: 3em;
+				font-weight: bold;
+				display: block;
+				direction: rtl;
+				text-align: left;
+				margin-left: 150px;
+			}
+			
+			button:not(.different-btn) {
+				margin-left: 20px;
+				width: 120px;
+				height: 50px;
+				font-size: 20px;
+				border-radius: 8px;
+				font-weight: bold;
+			}
+			
+			#points {
+				position: fixed;
+				bottom: 30;
+				left: 0;
+				width: 37%;
+				height: 45px;
+				margin: 7px;
+				border: 4px solid cyan;
+				border-radius: 5px;
+				padding: 3px 10px;
+				font-family: 'Permanent Marker', cursive;
+				font-size: 30px;
+				color: blue;
+				direction: rtl;
+				text-align: left;
+				font-weight: bold;
+			}
+			
+			#coin {
+				width: 30px;
+				height: 30px;
+			}
+			
+			.different-btn {
+				position: fixed;
+				right: 0;
+				bottom: 0;
+				border-radius: 10px;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<h1 id="heading"><span id="n1"></span> <span id="op"></span> <span id="n2"></span> = </h1>
+		<input id="answer" type="text" autofocus></input>
+		<button id="answer-btn">חשב</button>
+		<button id="new-question-btn">תרגיל חדש</button><br><br>
+		<img id="smly-true" class="hide-smiley" src="smiley-true.png"></img>
+		<img id="smly-false" class="hide-smiley" src="smiley-false.png"></img>
+		<img id="smly-question" class="show-smiley" src="smiley-question.jpg"></img>
+		<p id="cheer"></p>
+		<audio id="applause">
+			<source src="applause.mp3" type="audio/mpeg">
+		</audio>
+		<audio id="wrong-answer">
+			<source id="wrong-answer-source" src="" type="audio/mpeg">
+		</audio>
+		<div id="points">הנקודות שלי:
+			<img id="coin" src="golden-coin-1.jpg"></img>
+			
+		</div>
+		<button id="init-local-storage-btn" class="different-btn">.</button>
+	</body>
+	<script>
+	
+		"use strict";
+	
+		function getRandomMp3ForWrongAnswer() {
+			let mp3File;
+			const choice = Math.floor(Math.random() * 3);
+			switch (choice) {
+				case 0 : { mp3File = "wrong-answer.mp3"; break; }
+				case 1 : { mp3File = "fail.mp3"; break; }
+				case 2 : { mp3File = "ooops.mp3"; break; }
+			}
+			return mp3File;
+		}
+	
+// ======================================================================	
+	
+		function getRandomColor() {
+			let r = Math.floor(Math.random() * 256);
+			let g = Math.floor(Math.random() * 256);
+			let b = Math.floor(Math.random() * 256);
+			if (r === 255 && g === 255 && b === 255) {
+				r = 0;
+				g = 0;
+				b = 0;
+			}
+			const color = `rgb(${r},${g},${b})`;
+			return color;
+		}
+
+// ======================================================================
+
+		function getCheerPhrase() {
+			let phrase = Math.floor(Math.random() * 11);
+			switch (phrase) {
+				case 0 : return ('כל הכבוד!');
+				case 1 : return ('יפה מאוד!');
+				case 2 : return ('מצויין!');
+				case 3 : return ('מעולה!');
+				case 4 : return ('נהדר!');
+				case 5 : return ('יופי! המשך כך!');
+				case 6 : return ('נכון מאוד!');
+				case 7 : return ('נכון!');
+				case 8 : return ('תשובה נכונה!');
+				case 9 : return ('יפה!');
+				case 10 : return ('אתה צודק!');
+			}
+		}
+
+// ======================================================================
+
+		function getPhraseForWrongAnswer() {
+			let phrase = Math.floor(Math.random() * 2);
+			switch (phrase) {
+				case 0 : return ('תשובה לא נכונה, בבקשה נסה שוב.');
+				case 1 : return ('תשובה שגויה, נסה שוב בבקשה.');
+			}
+		}
+
+// ======================================================================
+	
+		function getRandomNumber() {
+			let num = Math.floor(Math.random() * 21);
+			return num;
+		}
+		
+// ======================================================================
+		
+		function getRandomOperator() {
+			let op = Math.floor(Math.random() * 4);
+			switch (op) {
+				case 0 : return ('+');
+				case 1 : return ('-');
+				case 2 : return ('x');
+				case 3 : return (':');
+			}
+		}
+		
+// ======================================================================		
+
+		function calcArithm(number1, operator, number2) {
+			switch (operator) {
+				case "+" : return number1 + number2;
+				case "-" : return number1 - number2;
+				case "x" : return number1 * number2;
+				case ":" : return number1 / number2;
+			}
+		}
+		
+// ======================================================================
+
+		function checkAnswer(res, timesClicked) {
+			
+			let answer = document.getElementById("answer").value;
+			
+			document.getElementById("smly-question").classList.remove("show-smiley");
+			document.getElementById("smly-question").classList.add("hide-smiley");
+			
+			answer = parseInt(answer);
+			res = parseInt(res);
+			
+			document.getElementById("cheer").style.color = getRandomColor();
+			
+			if (answer === res) {
+			// right answer
+				document.getElementById("smly-false").classList.remove("show-smiley");
+				document.getElementById("smly-false").classList.add("hide-smiley");
+				
+				document.getElementById("smly-true").classList.remove("hide-smiley");
+				document.getElementById("smly-true").classList.add("show-smiley");
+				
+				document.getElementById("cheer").innerHTML = getCheerPhrase();
+				
+				document.getElementById("applause").play();
+				
+				document.getElementById("new-question-btn").focus();
+				
+				// for a right answer, points variable value will be increased by 1, displayed on screen, and saved (updated) 
+				// to the local storage. a point will be given only if answered correctly, and clicked calculate for the 1st 
+				// time, i.e. not increased by 1 if timesClicked > 1
+				let points = localStorage.getItem("points");
+				if (timesClicked === 1) {
+					points++;
+				}
+				document.getElementById("points").innerHTML = "הנקודות שלי: " + points;
+				localStorage.setItem("points", points);
+				
+				if (points >= 10) {
+					for (let i=1; i <= parseInt(points / 10); i++) {
+						let newCoinImgElem = document.createElement("img");
+						newCoinImgElem.id = "coin";
+						newCoinImgElem.src = "golden-coin-1.jpg";
+						newCoinImgElem.style.display = "inline";
+						newCoinImgElem.style.margin = "0px";
+						document.getElementById("points").appendChild(newCoinImgElem);
+					}
+				}
+				
+				return true;
+				
+			} else  {
+			// wrong answer
+				
+				document.getElementById("smly-true").classList.remove("show-smiley");
+				document.getElementById("smly-true").classList.add("hide-smiley");
+				
+				document.getElementById("smly-false").classList.remove("hide-smiley");
+				document.getElementById("smly-false").classList.add("show-smiley");
+				
+				document.getElementById("cheer").innerHTML = getPhraseForWrongAnswer();
+				
+				document.getElementById("answer").focus();
+				
+				document.getElementById("wrong-answer-source").src = getRandomMp3ForWrongAnswer();
+				document.getElementById("wrong-answer").load();
+				document.getElementById("wrong-answer").play();
+				
+				document.getElementById("answer").addEventListener( "keydown", function () {
+				
+					document.getElementById("smly-true").classList.remove("show-smiley");
+					document.getElementById("smly-true").classList.add("hide-smiley");
+					document.getElementById("smly-false").classList.remove("show-smiley");
+					document.getElementById("smly-false").classList.add("hide-smiley");
+					document.getElementById("smly-question").classList.remove("hide-smiley");
+					document.getElementById("smly-question").classList.add("show-smiley");
+					
+				} );
+				
+				return false;
+			}
+		}
+		
+// ======================================================================
+
+		function displayCurrentPoints() {
+			let points = localStorage.getItem("points");
+			if (points != null) {
+				document.getElementById("points").innerHTML = "הנקודות שלי: " + points;
+				
+				if (points >= 10) {
+					for (let i=1; i <= parseInt(points / 10); i++) {
+						let newCoinImgElem = document.createElement("img");
+						newCoinImgElem.id = "coin";
+						newCoinImgElem.src = "golden-coin-1.jpg";
+						newCoinImgElem.style.display = "inline";
+						newCoinImgElem.style.margin = "0px";
+						document.getElementById("points").appendChild(newCoinImgElem);
+					}
+				}
+			}
+			
+		}
+
+// ======================================================================
+		
+		document.getElementById("new-question-btn").addEventListener("click", function() {
+			const answer = document.getElementById("answer");
+			if (answer.value !== "") {
+				location.reload();
+				displayCurrentPoints();
+			} else {
+				const p = document.getElementById("cheer");
+				p.style.color = "blue";
+				p.innerHTML = "אתה יכול להצליח לפתור את התרגיל! אני סומך עליך!";
+				answer.focus();
+				
+				document.getElementById("answer").addEventListener( "keydown", function () {
+					document.getElementById("cheer").innerHTML = "";
+				});
+			}
+		});
+
+// ======================================================================
+		
+		let timesClicked = 0; // initialize timeClicked variable on reload, as it's a new exercise
+		document.getElementById("answer-btn").addEventListener("click", function() {
+			timesClicked++;
+			if (checkAnswer(res, timesClicked) === false) {
+			// if didn't answer correctly last time, initialize timesClicked again
+				timesClicked = 0;
+			}
+		});
+	
+// ======================================================================	
+	
+		// initialize local storage
+		document.getElementById("init-local-storage-btn").addEventListener("click", function () {
+			localStorage.setItem("points", "0");
+			alert("Initialized Points JSON to 0 in Local Storage.");
+		});
+
+// ======================================================================	
+
+		displayCurrentPoints(); // on first page load
+		
+		document.getElementById("heading").style.color = getRandomColor();
+		
+		let num1 = getRandomNumber();
+		let oper = getRandomOperator();
+		let num2 = getRandomNumber();
+		
+		//    negative result from substruction         division by zero        non-integer result from division       multiply result is greater than 100
+		while ( (num2 > num1 && oper === '-') || (num2 === 0 && oper === ':') || (num1 % num2 !== 0 && oper === ':') || (num1 * num2 > 100 && oper === 'x') ) {
+			num1 = getRandomNumber();
+			oper = getRandomOperator();
+			num2 = getRandomNumber();
+		}
+		
+		let res = calcArithm(num1, oper, num2);
+		
+		let n1 = document.getElementById("n1");
+		let op = document.getElementById("op");
+		let n2 = document.getElementById("n2");
+			
+		n1.innerHTML = num1;
+		op.innerHTML = oper;
+		n2.innerHTML = num2;
+		
+// ======================================================================
+		
+	</script>
+</html>
